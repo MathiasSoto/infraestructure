@@ -3,7 +3,7 @@ version: '3'
 # docker network create --subnet 172.200.1.0/24 dev
 
 networks:
-  tesla_network:
+  local:
     external:
       name: dev
 
@@ -17,8 +17,7 @@ services:
     container_name: redis
     restart: always
     networks:
-      tesla_network:
-        ipv4_address: 172.200.1.5
+      - local
     ports:
       - "6379:6379"
     volumes:
@@ -36,8 +35,7 @@ services:
     container_name: elastic
     restart: always
     networks:
-      tesla_network:
-        ipv4_address: 172.200.1.2
+      - local
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -56,8 +54,7 @@ services:
     container_name: kibana
     restart: always
     networks:
-      tesla_network:
-        ipv4_address: 172.200.1.3
+      - local
     ports:
       - "5601:5601"
     links:
@@ -76,8 +73,7 @@ services:
     container_name: postgres
     restart: always
     networks:
-      tesla_network:
-        ipv4_address: 172.200.1.4
+      - local
     ports:
       - "5432:5432"
     volumes:
@@ -88,3 +84,18 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: fooding
     tty: true
+
+  proxy:
+    image: traefik:v2.1
+    container_name: proxy
+    command:
+      - "--providers.docker"
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - local
